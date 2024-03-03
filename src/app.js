@@ -1,53 +1,43 @@
 const express = require('express');
-const fs = require('fs');
+const ProductManager = require('./ProductManager');
 
 const app = express();
 const PORT = 8080;
 
-// Middleware para manejar el body de las peticiones
+const productManager = new ProductManager('products.json');
+
 app.use(express.json());
 
-// Ruta para obtener todos los productos o un número específico de productos
-app.get('/products', (req, res) => {
-    fs.readFile('products.json', 'utf8', (err, data) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Error interno del servidor' });
-        }
-
-        const products = JSON.parse(data);
+// Buscar todos los productos o un número específico de productos
+app.get('/products', async (req, res) => {
+    try {
         const limit = parseInt(req.query.limit);
-
-        if (limit) {
-            res.json(products.slice(0, limit));
+        if (isNaN(limit)) {
+            const products = await productManager.getAllProducts();
+            res.json(products);
         } else {
+            const products = await productManager.getAllProducts(limit);
             res.json(products);
         }
-    });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
 });
 
-// Ruta para obtener un producto por su id
-app.get('/products/:id', (req, res) => {
-    const productId = parseInt(req.params.id);
-
-    fs.readFile('products.json', 'utf8', (err, data) => {
-        if (err) {
-            console.error(err);
-            return res.status(500).json({ error: 'Error interno del servidor' });
-        }
-
-        const products = JSON.parse(data);
-        const product = products.find(p => p.id === productId);
-
-        if (product) {
-            res.json(product);
-        } else {
-            res.status(404).json({ error: 'El producto no existe' });
-        }
-    });
+// Buscar un producto por su id
+app.get('/products/:id', async (req, res) => {
+    try {
+        const productId = parseInt(req.params.id);
+        const product = await productManager.getProductById(productId);
+        res.json(product);
+    } catch (error) {
+        console.error(error);
+        res.status(404).json({ error: 'El producto no existe' });
+    }
 });
 
-// Iniciar el servidor
+// Arranca el server
 app.listen(PORT, () => {
     console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
