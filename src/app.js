@@ -8,6 +8,12 @@ const productManager = new ProductManager('products.json');
 
 app.use(express.json());
 
+
+// solucion al cannot /get ?
+app.get("/", (req, res)=>{
+    res.send("Bienvenidos al index");
+});
+
 // Buscar todos los productos o un número específico de productos
 app.get('/products', async (req, res) => {
     try {
